@@ -196,3 +196,5 @@ void sortNewCategory(Persona *personas, int cont, char* num_lista, FILE * fpin, 
     }
     fclose(fpout);
 }
+
+ola xdxd
