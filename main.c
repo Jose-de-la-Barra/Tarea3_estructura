@@ -1,200 +1,203 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include<string.h>
-#include "Personas.h"
+#include "struct.h"
 
-#define MAXPERSONAS 200
+// funciones auxiliares
+int menor_4_5(atacante a1, atacante a2);
+int menor_1_2(atacante a1, atacante a2);
 
-const char* PERSON_FORMAT_OUT = "%s,%ld,%Lf,%ld\n";
+// Version con memoria estatica y arreglos de largo fijo
+// Asumimos que hay a lo mas 1000 atacantes
+// Asumimos que los argumentos al ejecutar el programa son correctos
+int main(int argc, char *argv[])
+{
+  FILE *input = fopen(argv[1], "r");
+  char line[1000]; // asumimos que cada linea tiene largo a lo mas 1000
+  atacante atacantes_4_5[1000]; // almacena atacantes categoria 4 o 5
+  atacante atacantes_3_con[1000]; // almacena atacantes categoria 3 con prob_ataque
+  atacante atacantes_3_sin[1000]; // almacena atacantes categoria 3 sin prob_ataque
+  atacante atacantes_1_2[1000]; // almacena atacantes categoria 1 o 2
+  atacante atacantes_ordenados[1000]; // almacenara todos los atacantes correctamente ordenados
+  atacante aux;
+  int count_4_5 = 0, count_3_con = 0, count_3_sin = 0, count_1_2 = 0;
 
-void sort_words(Persona* personas, int count, char *);
-void category(Persona* personas, int cont, char *);
-void sortNewCategory(Persona* personas, int cont, char *, FILE *, char *);
-
-int main(int argc, char *argv[]) {
-    FILE* fpin;
-    fpin = fopen(argv[1], "r");
-    if (fpin == NULL) return 1;
-
-    char row[MAXPERSONAS];
-    char *token;
-    int cont = 0;
-
-    // para sacar la primera línea
-    fgets(row, MAXPERSONAS, fpin);
-    Persona  *personas = (Persona *) malloc(sizeof(Persona));
-
-
-    while (feof(fpin) != true) {
-        fgets(row, MAXPERSONAS, fpin);
-        Persona  *unaPersona = (Persona *) malloc(sizeof(Persona));
-
-        // Para conseguir el nombre
-        token = strtok(row, ",");
-        strcpy(unaPersona -> name, token);
-
-        // Para conseguir la categoría de peligrosidad
-        token = strtok(NULL, ",");
-        unaPersona -> dangerCategory = strtol(token, (char **) NULL, 0);
-
-        // Para conseguir la probabilidad de ataque
-        token = strtok(NULL, ",");
-        token = strtok(token, "\npo");
-        if (token != NULL) {
-            unaPersona -> attackProb = strtold(token, (char **) NULL);
-        }
-        else unaPersona -> attackProb = -1;  // asignamos un -1 para la gente que no tiene probabilidad de ataque para diferenciar
-
-        unaPersona -> category = 0;  // agregamos una columna de ceros para un posterior ordenamiento
-
-        personas[cont] = *unaPersona;
-        cont++;
+  fgets(line, 1000, input); // ignoramos la cabecera
+  while (fgets(line, 1000, input) != NULL) {
+    strcpy(aux.nombre, strtok(line, ","));
+    aux.categoria = atoi(strtok(NULL, ","));
+    char *token = strtok(NULL, ",");
+    if (strcmp(token, "\n") == 0) {
+      aux.prob_ataque = -1;
+    }
+    else {
+      aux.prob_ataque = atof(token);
     }
 
-    category(personas, cont, argv[3]);
-    sortNewCategory(personas, cont, argv[2], fpin, argv[3]);
+    if (aux.categoria == 4 || aux.categoria == 5) {
+      atacantes_4_5[count_4_5] = aux;
+      count_4_5++;
+    }
+    else if (aux.categoria == 3 && aux.prob_ataque == -1) {
+      atacantes_3_sin[count_3_sin] = aux;
+      count_3_sin++;
+    }
+    else if (aux.categoria == 3 && aux.prob_ataque != -1) {
+      atacantes_3_con[count_3_con] = aux;
+      count_3_con++;
+    }
+    else {
+      atacantes_1_2[count_1_2] = aux;
+      count_1_2++;
+    }
+  }
 
-    fclose(fpin);
-    return 0;
+  // ordenamos atacantes categoria 4 o 5 (usamos bubble sort)
+
+  for (int i = 0; i < count_4_5; i++) {
+    for (int j = 0; j < count_4_5 - 1 - i; j++) {
+      if (menor_4_5(atacantes_4_5[j], atacantes_4_5[j+1])) { 
+        // swap entre atacantes_4_5[j] y atacantes_4_5[j+1]
+        aux = atacantes_4_5[j];
+        atacantes_4_5[j] = atacantes_4_5[j+1];
+        atacantes_4_5[j+1] = aux;
+      }
+    }
+  }  
+
+  // ordenamos atacantes categoria 1 o 2 (usamos bubble sort)
+
+  for (int i = 0; i < count_1_2; i++) {
+    for (int j = 0; j < count_1_2 - 1 - i; j++) {
+      if (menor_1_2(atacantes_1_2[j], atacantes_1_2[j+1])) { 
+        // swap entre atacantes_1_2[j] y atacantes_1_2[j+1]
+        aux = atacantes_1_2[j];
+        atacantes_1_2[j] = atacantes_1_2[j+1];
+        atacantes_1_2[j+1] = aux;
+      }
+    }
+  } 
+
+  // ordenamos por separado atacantes categoria 3 con prob_ataque y sin prob_ataque (usamos bubble sort)
+
+  for (int i = 0; i < count_3_con; i++) {
+    for (int j = 0; j < count_3_con - 1 - i; j++) {
+      if (atacantes_3_con[j].prob_ataque < atacantes_3_con[j+1].prob_ataque) { 
+        // swap entre atacantes_3_con[j] y atacantes_3_con[j+1]
+        aux = atacantes_3_con[j];
+        atacantes_3_con[j] = atacantes_3_con[j+1];
+        atacantes_3_con[j+1] = aux;
+      }
+    }
+  } 
+
+  for (int i = 0; i < count_3_sin; i++) {
+    for (int j = 0; j < count_3_sin - 1 - i; j++) {
+      if (strcmp(atacantes_3_sin[j].nombre, atacantes_3_sin[j+1].nombre) > 0) { 
+        // swap entre atacantes_3_sin[j] y atacantes_3_sin[j+1]
+        aux = atacantes_3_sin[j];
+        atacantes_3_sin[j] = atacantes_3_sin[j+1];
+        atacantes_3_sin[j+1] = aux;
+      }
+    }
+  } 
+
+  // escribimos el ordenamiento final en atacantes_ordenados
+
+  int count = 0;
+  for(int i = 0; i < count_4_5; i++) {
+    atacantes_ordenados[count] = atacantes_4_5[i];
+    count++;
+  }
+
+  // ----- aplicamos las reglas de la categoria 3 -----
+  for(int i = 0; i < count_3_con/2; i++) {
+    atacantes_ordenados[count] = atacantes_3_con[i];
+    count++;
+  }
+
+  for(int i = 0; i < count_3_sin; i++) {
+    atacantes_ordenados[count] = atacantes_3_sin[i];
+    count++;
+  }
+
+  for(int i = count_3_con/2; i < count_3_con; i++) {
+    atacantes_ordenados[count] = atacantes_3_con[i];
+    count++;
+  }
+  // ----------
+
+  for(int i = 0; i < count_1_2; i++) {
+    atacantes_ordenados[count] = atacantes_1_2[i];
+    count++;
+  }
+
+  // escribimos los N mas peligrosos al archivo de salida
+  FILE *output = fopen(argv[3], "w");
+  int N = atoi(argv[2]);
+  for (int i = 0; i < N; i++) {
+    fputs(atacantes_ordenados[i].nombre, output);
+    fputs("\n", output);
+  }
+
+  fclose(output);
 }
 
-void category(Persona *personas, int cont, char* arch_out) {
-    FILE* fpout;
-    fpout = fopen(arch_out, "w+");
-    if (fpout == NULL) perror("Opening file");
 
-    long int danger_category;
-    long double attack_prob;
+/* entrega 1 si a1 tiene menor peligrosidad que a2, segun los criterios de la categoria 4 y 5; 
+en caso contrario entrega 0 */
+int menor_4_5(atacante a1, atacante a2)
+{
+  if (a1.categoria < a2.categoria) {
+    return 1;
+  }
 
-    for (int i = 0; i < cont; i++) {
-        danger_category = personas[i].dangerCategory;
-        attack_prob = personas[i].attackProb;
-        if (danger_category == 5 && attack_prob == (long double) -1) {
-            personas[i].category = 11;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 5 && attack_prob != (long double) -1) {
-            personas[i].category = 10;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 4 && attack_prob == (long double) -1) {
-            personas[i].category = 9;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 4 && attack_prob != (long double) -1) {
-            personas[i].category = 8;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 3 && attack_prob >= (long double) 0.5){
-            personas[i].category = 7;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 3 && attack_prob == (long double) -1) {
-            personas[i].category = 6;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 3 && attack_prob <= (long double) 0.5 && attack_prob > (long double) 0){
-            personas[i].category = 5;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 2 && attack_prob != (long double) -1) {
-            personas[i].category = 4;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 2 && attack_prob == (long double) -1) {
-            personas[i].category = 3;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 1 && attack_prob != (long double) -1) {
-            personas[i].category = 2;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
-        if (danger_category == 1 && attack_prob == (long double) -1) {
-            personas[i].category = 1;
-            fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
-        }
+  if (a1.categoria == a2.categoria) {
+    if(a1.prob_ataque != -1) {
+      if (a2.prob_ataque == -1) {
+        return 1;
+      }
+      
+      if(a1.prob_ataque < a2.prob_ataque || (a1.prob_ataque == a2.prob_ataque && strcmp(a1.nombre, a2.nombre) > 0)) {
+        return 1;
+      }
     }
-    fclose(fpout);
-    sort_words(personas, cont, arch_out);
+    else {
+      if (a2.prob_ataque == -1 && strcmp(a1.nombre, a2.nombre) > 0) {
+        return 1;
+      }
+    }
+  }
+
+  return 0;
 }
 
-void sort_words(Persona* personas, int count, char* arch_out) {
-    FILE *fpout;
-    fpout = fopen(arch_out, "w+");
-    if (fpout == NULL) perror("Opening file");
+/* entrega 1 si a1 tiene menor peligrosidad que a2, segun los criterios de la categoria 1 y 2; 
+en caso contrario entrega 0 */
+int menor_1_2(atacante a1, atacante a2)
+{
+  if (a1.categoria < a2.categoria) {
+    return 1;
+  }
 
-    long int temp;
-    char temp_2[100];
-    long int temp_3;
-    long double temp_4;
-
-    for (int i = 0; i < count; i++) {
-        for (int j = 0; j < count; j++) {
-            if (strcmp(personas[i].name, personas[j].name) < 0) {
-
-                temp = personas[i].category;
-                personas[i].category = personas[j].category;
-                personas[j].category = temp;
-
-                strcpy(temp_2, personas[i].name);
-                strcpy(personas[i].name, personas[j].name);
-                strcpy(personas[j].name, temp_2);
-
-                temp_3 = personas[i].dangerCategory;
-                personas[i].dangerCategory = personas[j].dangerCategory;
-                personas[j].dangerCategory = temp_3;
-
-                temp_4 = personas[i].attackProb;
-                personas[i].attackProb = personas[j].attackProb;
-                personas[j].attackProb = temp_4;
-            }
+  if (a1.categoria == a2.categoria) {
+    if(a1.prob_ataque != -1) {
+      if (a2.prob_ataque != -1) {
+        if(a1.prob_ataque < a2.prob_ataque || (a1.prob_ataque == a2.prob_ataque && strcmp(a1.nombre, a2.nombre) > 0)) {
+          return 1;
         }
+      }
     }
-    for (int i = 0; i < count+1; i++) {
-        fprintf(fpout, PERSON_FORMAT_OUT, personas[i].name, personas[i].dangerCategory, personas[i].attackProb, personas[i].category);
+    else {
+      if (a2.prob_ataque != -1) {
+        return 1;
+      }
+
+      if (strcmp(a1.nombre, a2.nombre) > 0) {
+        return 1;
+      }
     }
-    fclose(fpout);
+  } 
+
+  return 0;
 }
-
-void sortNewCategory(Persona *personas, int cont, char* num_lista, FILE * fpin, char* arch_out) {
-    FILE *fpout;
-    fpout = fopen(arch_out, "w+");
-    if (fpout == NULL) perror("Opening file");
-
-    long int temp;
-    char temp_2[100];
-    long int temp_3;
-    long double temp_4;
-
-    int out_mbr = atoi(num_lista);
-
-    for (int i = 0; i < cont; i++) {
-        for (int j = 0; j < cont; j++) {
-            if (personas[i].category > personas[j].category) {
-
-                temp = personas[i].category;
-                personas[i].category = personas[j].category;
-                personas[j].category = temp;
-
-                strcpy(temp_2, personas[i].name);
-                strcpy(personas[i].name, personas[j].name);
-                strcpy(personas[j].name, temp_2);
-
-                temp_3 = personas[i].dangerCategory;
-                personas[i].dangerCategory = personas[j].dangerCategory;
-                personas[j].dangerCategory = temp_3;
-
-                temp_4 = personas[i].attackProb;
-                personas[i].attackProb = personas[j].attackProb;
-                personas[j].attackProb = temp_4;
-            }
-        }
-    }
-    for (int i = 0; i < out_mbr-1; i++) {
-        fprintf(fpout, "%s,%ld\n", personas[i].name, personas[i].category);
-    }
-    fclose(fpout);
-}
-
-ola xdxd
