@@ -1,2 +1,2 @@
 all: 
-	gcc main.c -o tarea2
+	gcc Tarea_3.c -o tarea
