@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
 }
 
 
+
 void inicializar_hash(atacante **hash_table) { // Ocupamos esta función para llenar los valores de los baldes del hash con NULL para que no nos dé un error
     for (int i = 0; i < TABLE_SIZE; i++) {
         hash_table[i] = NULL;
